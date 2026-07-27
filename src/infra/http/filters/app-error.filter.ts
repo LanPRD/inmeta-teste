@@ -1,6 +1,12 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Logger } from "@nestjs/common";
-import type { FastifyReply } from "fastify";
 import { AppError, HttpStatus } from "@/core/errors";
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  Logger
+} from "@nestjs/common";
+import type { FastifyReply } from "fastify";
 
 @Catch()
 export class AppErrorFilter implements ExceptionFilter {
@@ -18,7 +24,13 @@ export class AppErrorFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const body = exception.getResponse();
-      response.status(status).send(typeof body === "string" ? { error: exception.name, message: body } : body);
+      response
+        .status(status)
+        .send(
+          typeof body === "string" ?
+            { error: exception.name, message: body }
+          : body
+        );
       return;
     }
 

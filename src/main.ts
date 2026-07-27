@@ -1,13 +1,19 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
-import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
+import {
+  FastifyAdapter,
+  type NestFastifyApplication
+} from "@nestjs/platform-fastify";
 import { AppModule } from "./app.module";
 import { EnvService } from "./infra/env/env.service";
 import { setupSwagger } from "./infra/http/docs/swagger";
 import { AppErrorFilter } from "./infra/http/filters/app-error.filter";
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter()
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({

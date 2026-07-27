@@ -1,7 +1,7 @@
 // @ts-check
 import globals from "globals";
 
-import NodeConfig from "@prdev-solutions/eslint-config/next.mjs";
+import NodeConfig from "@prdev-solutions/eslint-config/node.mjs";
 
 export default [
   ...NodeConfig,

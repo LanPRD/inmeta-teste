@@ -4,7 +4,9 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 export function setupSwagger(app: INestApplication): void {
   const config = new DocumentBuilder()
     .setTitle("Inmeta - Gestão de Documentação de Colaboradores")
-    .setDescription("API para gerenciamento do fluxo de documentação de colaboradores")
+    .setDescription(
+      "API para gerenciamento do fluxo de documentação de colaboradores"
+    )
     .setVersion("1.0")
     .build();
 
