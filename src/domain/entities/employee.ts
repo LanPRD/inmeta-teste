@@ -1,5 +1,7 @@
 import { Entity, UniqueEntityId } from "@/core/entities";
 import type { Optional } from "@/core/types/optional";
+import type { DocumentSubmission } from "./document-submission";
+import type { EmployeeDocumentType } from "./employee-document-type";
 
 export interface EmployeeProps {
   name: string;
@@ -7,6 +9,8 @@ export interface EmployeeProps {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
+  employeeDocumentTypes?: EmployeeDocumentType[];
+  documentSubmissions?: DocumentSubmission[];
 }
 
 export class Employee extends Entity<EmployeeProps> {
@@ -28,6 +32,14 @@ export class Employee extends Entity<EmployeeProps> {
 
   get deletedAt(): Date | null {
     return this.props.deletedAt;
+  }
+
+  get employeeDocumentTypes(): EmployeeDocumentType[] | undefined {
+    return this.props.employeeDocumentTypes;
+  }
+
+  get documentSubmissions(): DocumentSubmission[] | undefined {
+    return this.props.documentSubmissions;
   }
 
   static create(
