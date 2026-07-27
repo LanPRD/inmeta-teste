@@ -1,7 +1,7 @@
 import { left, right, type Either } from "@/core/either";
 import { InternalError } from "@/core/errors";
 import type { Employee } from "@/domain/entities";
-import type { EmployeeRepository } from "@/domain/repositories";
+import { EmployeeRepository } from "@/domain/repositories";
 import { Injectable, Logger } from "@nestjs/common";
 
 type GetAllEmployeesUseCaseResponse = Either<
