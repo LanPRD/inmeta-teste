@@ -12,12 +12,14 @@ datasource db {
 }
 
 model Employee {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  name      String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  name                  String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  employeeDocumentTypes EmployeeDocumentType[]
+  documentSubmissions   DocumentSubmission[]
 }
 
 model DocumentType {
@@ -27,4 +29,38 @@ model DocumentType {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
+
+  employeeDocumentTypes EmployeeDocumentType[]
+  documentSubmissions   DocumentSubmission[]
+}
+
+model EmployeeDocumentType {
+  id             String    @id @default(uuid())
+  employeeId     String
+  documentTypeId String
+  linkedAt       DateTime  @default(now())
+  unlinkedAt     DateTime?
+
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  documentType DocumentType @relation(fields: [documentTypeId], references: [id])
+}
+
+model DocumentSubmission {
+  id             String           @id @default(uuid())
+  employeeId     String
+  documentTypeId String
+  version        Int
+  status         SubmissionStatus @default(ACTIVE)
+  submittedAt    DateTime         @default(now())
+  deletedAt      DateTime?
+
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  documentType DocumentType @relation(fields: [documentTypeId], references: [id])
+
+  @@unique([employeeId, documentTypeId, version])
+}
+
+enum SubmissionStatus {
+  ACTIVE
+  SUPERSEDED
 }
