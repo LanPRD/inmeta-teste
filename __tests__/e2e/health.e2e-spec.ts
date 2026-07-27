@@ -1,8 +1,8 @@
-import { Test, TestingModule } from "@nestjs/testing";
 import {
   FastifyAdapter,
   type NestFastifyApplication
 } from "@nestjs/platform-fastify";
+import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/app.module";
 
@@ -17,6 +17,7 @@ describe("HealthController (e2e)", () => {
     app = moduleFixture.createNestApplication<NestFastifyApplication>(
       new FastifyAdapter()
     );
+
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });
