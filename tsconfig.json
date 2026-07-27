@@ -23,7 +23,8 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "types": ["vitest/globals"]
   },
   "exclude": ["node_modules", "dist", "prisma.config.ts"]
 }
