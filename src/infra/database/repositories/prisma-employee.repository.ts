@@ -1,7 +1,7 @@
 import { Employee } from "@/domain/entities";
 import { EmployeeRepository } from "@/domain/repositories";
 import { Injectable } from "@nestjs/common";
-import { PrismaEmployeeMapper } from "../mappers/prisma-employee-mapper";
+import { PrismaEmployeeMapper } from "../mappers";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
