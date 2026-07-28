@@ -7,6 +7,8 @@ import { InternalError, NotFoundError, ValidationError } from "@/core/errors";
 import { DocumentSubmission } from "@/domain/entities";
 import { SubmissionStatus } from "@/domain/enums";
 import { DocumentSubmissionRepository } from "@/domain/repositories/document-submission-repository";
+import { DocumentTypeRepository } from "@/domain/repositories/document-type-repository";
+import { EmployeeDocumentTypeRepository } from "@/domain/repositories/employee-document-type-repository";
 import { EmployeeRepository } from "@/domain/repositories/employee-repository";
 import { Injectable, Logger } from "@nestjs/common";
 
@@ -21,6 +23,8 @@ export class SubmitDocumentUseCase {
 
   constructor(
     private readonly employeeRepository: EmployeeRepository,
+    private readonly documentTypeRepository: DocumentTypeRepository,
+    private readonly linkRepository: EmployeeDocumentTypeRepository,
     private readonly submissionRepository: DocumentSubmissionRepository
   ) {}
 
@@ -42,6 +46,22 @@ export class SubmitDocumentUseCase {
       }
 
       const { documentTypeId } = parsed.data;
+
+      const documentType =
+        await this.documentTypeRepository.findById(documentTypeId);
+
+      if (!documentType) {
+        return left(new NotFoundError("DocumentType", documentTypeId));
+      }
+
+      const link = await this.linkRepository.findByEmployeeAndDocumentType(
+        employeeId,
+        documentTypeId
+      );
+
+      if (!link || link.unlinkedAt) {
+        return left(new NotFoundError("Link"));
+      }
 
       const activeVersion = await this.submissionRepository.findActiveVersion(
         employeeId,

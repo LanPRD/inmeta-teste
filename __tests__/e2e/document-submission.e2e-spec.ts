@@ -128,6 +128,33 @@ describe("Document Submission (e2e)", () => {
       // Assert
       expect(res.status).toBe(404);
     });
+
+    it("returns 404 when document type does not exist", async () => {
+      // Arrange
+      const empId = await createEmployee("NoDocType", "nodoctype@e2e.test");
+
+      // Act
+      const res = await request(app.getHttpServer())
+        .post(`/employees/${empId}/documents`)
+        .send({ documentTypeId: "00000000-0000-0000-0000-000000000000" });
+
+      // Assert
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 404 when document type is not linked to the employee", async () => {
+      // Arrange
+      const empId = await createEmployee("NotLinked", "notlinked@e2e.test");
+      const dtId = await createDocumentType("ASO");
+
+      // Act — never linked
+      const res = await request(app.getHttpServer())
+        .post(`/employees/${empId}/documents`)
+        .send({ documentTypeId: dtId });
+
+      // Assert
+      expect(res.status).toBe(404);
+    });
   });
 
   describe("GET /employees/:employeeId/documents", () => {
