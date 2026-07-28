@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 
 const databaseUrl =
   process.env.DATABASE_URL ??
-  "postgresql://inmeta:inmeta@localhost:5432/inmeta?schema=public";
+  "postgresql://inmeta:inmeta@localhost:5433/inmeta_test?schema=public";
 
 export default defineConfig({
   test: {
