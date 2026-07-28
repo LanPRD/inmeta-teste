@@ -18,7 +18,10 @@ describe("DeleteEmployeeUseCase", () => {
     it("soft deletes an existing employee", async () => {
       // Arrange
       const { sut, repo } = makeSut();
-      const employee = Employee.create({ name: "John", email: "john@test.com" });
+      const employee = Employee.create({
+        name: "John",
+        email: "john@test.com"
+      });
       await repo.create(employee);
 
       // Act
@@ -63,7 +66,10 @@ describe("DeleteEmployeeUseCase", () => {
     it("returns InternalError when repository throws", async () => {
       // Arrange
       const { sut, repo } = makeSut();
-      const employee = Employee.create({ name: "John", email: "john@test.com" });
+      const employee = Employee.create({
+        name: "John",
+        email: "john@test.com"
+      });
       await repo.create(employee);
       repo.forceError = true;
 

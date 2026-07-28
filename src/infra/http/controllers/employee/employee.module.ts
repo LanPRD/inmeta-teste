@@ -20,7 +20,7 @@ import { UpdateEmployeeController } from "./update-employee.controller";
     GetAllEmployeesController,
     GetEmployeeByIdController,
     UpdateEmployeeController,
-    DeleteEmployeeController,
+    DeleteEmployeeController
   ],
   providers: [
     {
