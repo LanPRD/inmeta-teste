@@ -71,30 +71,43 @@ conexão real com o banco).
 
 ## Testes
 
+Cada camada de teste usa seu próprio banco de dados isolado:
+
+| Camada       | Banco           | Porta | Comando                     |
+| ------------ | --------------- | :---: | --------------------------- |
+| Unit         | InMemory (fake) |  —    | `npm test`                  |
+| Integração   | `inmeta_test`   | 5433  | `npm run test:integration`  |
+| E2E          | `inmeta` (dev)  | 5432  | `npm run test:e2e`          |
+| Cobertura    | unit apenas     |  —    | `npm run test:cov`          |
+
+A separação de bancos garante que os testes de integração não interfiram nos
+dados de desenvolvimento, e que os diferentes arquivos de teste de integração
+não causem race conditions entre si (execução sequencial com
+`fileParallelism: false`).
+
 ```text
 __tests__/
-├── unit/          # testes unitários (use-cases, entities, value-objects)
-├── integration/   # testes contra banco real (repositories)
-└── e2e/           # testes ponta a ponta via HTTP
+├── unit/               # use-cases, DTOs (schemas Zod)
+├── integration/        # repositories contra banco real
+│   └── repositories/   # 4 arquivos, 1 por entidade
+├── e2e/                # HTTP ponta a ponta (supertest + Fastify)
+├── test-repositories/  # InMemory fakes com forceError
+└── helpers/            # cleanDatabase, setup-integration, setup-e2e
 ```
 
 ```bash
-npm test          # unitários
-npm run test:e2e  # e2e
+# Subir banco de teste de integração (primeira vez)
+npm run db:test:up
+
+npm test                   # unitários
+npm run test:integration   # integração
+npm run test:e2e           # e2e
+npm run test:cov           # cobertura
 ```
 
 ## CI/CD
 
 `.github/workflows/release.yml`: em todo push na `master`, roda lint → build →
-testes unitários → e2e (com Postgres real como service container). Só se tudo
-passar, o job de `release` roda e gera uma GitHub Release automática
+testes unitários → integração → e2e (com Postgres real como service container).
+Só se tudo passar, o job de `release` roda e gera uma GitHub Release automática
 (versionamento semântico a partir de Conventional Commits).
-
-## O que ainda falta
-
-- Use-cases e endpoints das regras de negócio (cadastro, vínculo, envio,
-  pendências, estatísticas) — o schema/entidades de domínio estão prontos, a
-  camada de aplicação e os controllers ainda não.
-- Migration do Prisma criando as tabelas (schema já modelado, migration ainda
-  não gerada).
-- Testes de integração (pasta criada, sem conteúdo ainda).
