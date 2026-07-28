@@ -13,7 +13,7 @@ datasource db {
 
 model Employee {
   id                    String                 @id @default(uuid())
-  email                 String                 @unique
+  email                 String
   name                  String
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -24,7 +24,7 @@ model Employee {
 
 model DocumentType {
   id          String    @id @default(uuid())
-  name        String    @unique
+  name        String
   description String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
