@@ -1,5 +1,13 @@
 import type { DocumentSubmission } from "../entities";
 
+export interface FindPendingResult {
+  employeeId: string;
+  employeeName: string;
+  documentTypeId: string;
+  documentTypeName: string;
+  linkedAt: Date;
+}
+
 export abstract class DocumentSubmissionRepository {
   abstract findActiveByEmployee(
     employeeId: string,
@@ -15,6 +23,10 @@ export abstract class DocumentSubmissionRepository {
   ): Promise<DocumentSubmission[]>;
   abstract create(submission: DocumentSubmission): Promise<DocumentSubmission>;
   abstract update(submission: DocumentSubmission): Promise<void>;
+  abstract findPending(
+    page: number,
+    limit: number
+  ): Promise<{ data: FindPendingResult[]; total: number }>;
   abstract submit(
     previous: DocumentSubmission | null,
     next: DocumentSubmission

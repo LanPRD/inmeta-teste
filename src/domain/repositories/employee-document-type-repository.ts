@@ -1,6 +1,7 @@
 import type { EmployeeDocumentType } from "../entities";
 
 export abstract class EmployeeDocumentTypeRepository {
+  abstract findAllActive(): Promise<EmployeeDocumentType[]>;
   abstract findActiveByEmployee(
     employeeId: string
   ): Promise<EmployeeDocumentType[]>;
