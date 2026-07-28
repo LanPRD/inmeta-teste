@@ -48,7 +48,8 @@ export abstract class DocumentSubmissionRepository {
   abstract update(submission: DocumentSubmission): Promise<void>;
   abstract findPending(
     page: number,
-    limit: number
+    limit: number,
+    filters?: { employeeId?: string; documentTypeId?: string }
   ): Promise<{ data: FindPendingResult[]; total: number }>;
   abstract getStats(): Promise<GetStatsResult>;
   abstract submit(
