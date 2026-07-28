@@ -1,13 +1,19 @@
 import { left, right, type Either } from "@/core/either";
 import { InternalError, NotFoundError, ValidationError } from "@/core/errors";
 import type { EmployeeDocumentType } from "@/domain/entities";
+import { DocumentSubmissionRepository } from "@/domain/repositories/document-submission-repository";
 import { EmployeeDocumentTypeRepository } from "@/domain/repositories/employee-document-type-repository";
 import { EmployeeRepository } from "@/domain/repositories/employee-repository";
 import { Injectable, Logger } from "@nestjs/common";
 
+export interface LinkedDocumentTypeResult {
+  link: EmployeeDocumentType;
+  status: "PENDING" | "SUBMITTED";
+}
+
 type GetLinkedDocumentTypesUseCaseResponse = Either<
   ValidationError | NotFoundError | InternalError,
-  { links: EmployeeDocumentType[] }
+  { links: LinkedDocumentTypeResult[] }
 >;
 
 @Injectable()
@@ -16,7 +22,8 @@ export class GetLinkedDocumentTypesUseCase {
 
   constructor(
     private readonly employeeRepository: EmployeeRepository,
-    private readonly linkRepository: EmployeeDocumentTypeRepository
+    private readonly linkRepository: EmployeeDocumentTypeRepository,
+    private readonly submissionRepository: DocumentSubmissionRepository
   ) {}
 
   async execute(
@@ -35,7 +42,22 @@ export class GetLinkedDocumentTypesUseCase {
 
       const links = await this.linkRepository.findActiveByEmployee(employeeId);
 
-      return right({ links });
+      const results: LinkedDocumentTypeResult[] = [];
+
+      for (const link of links) {
+        const activeSubmission =
+          await this.submissionRepository.findActiveVersion(
+            link.employeeId,
+            link.documentTypeId
+          );
+
+        results.push({
+          link,
+          status: activeSubmission ? "SUBMITTED" : "PENDING"
+        });
+      }
+
+      return right({ links: results });
     } catch (error) {
       this.logger.error("Failed to fetch linked document types", error);
       return left(new InternalError("Failed to fetch linked document types"));

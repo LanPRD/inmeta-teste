@@ -2,6 +2,7 @@ import { GetLinkedDocumentTypesUseCase } from "@/application/use-cases/employee-
 import { InternalError, NotFoundError, ValidationError } from "@/core/errors";
 import { Employee, EmployeeDocumentType } from "@/domain/entities";
 import { Logger } from "@nestjs/common";
+import { InMemoryDocumentSubmissionRepository } from "../../../test-repositories/in-memory-document-submission-repository";
 import { InMemoryEmployeeDocumentTypeRepository } from "../../../test-repositories/in-memory-employee-document-type-repository";
 import { InMemoryEmployeeRepository } from "../../../test-repositories/in-memory-employee-repository";
 
@@ -10,14 +11,46 @@ vi.spyOn(Logger.prototype, "error").mockImplementation(() => {});
 const makeSut = () => {
   const employeeRepo = new InMemoryEmployeeRepository();
   const linkRepo = new InMemoryEmployeeDocumentTypeRepository();
-  const sut = new GetLinkedDocumentTypesUseCase(employeeRepo, linkRepo);
+  const submissionRepo = new InMemoryDocumentSubmissionRepository();
+  const sut = new GetLinkedDocumentTypesUseCase(
+    employeeRepo,
+    linkRepo,
+    submissionRepo
+  );
 
-  return { sut, employeeRepo, linkRepo };
+  return { sut, employeeRepo, linkRepo, submissionRepo };
 };
 
 describe("GetLinkedDocumentTypesUseCase", () => {
   describe("execute", () => {
-    it("returns only active links for an employee", async () => {
+    it("returns active links with PENDING status when not submitted", async () => {
+      // Arrange
+      const { sut, employeeRepo, linkRepo } = makeSut();
+      const employee = Employee.create({
+        name: "John",
+        email: "john@test.com"
+      });
+      await employeeRepo.create(employee);
+
+      const active = EmployeeDocumentType.create({
+        employeeId: employee.id.toString(),
+        documentTypeId: "dt-1"
+      });
+      await linkRepo.create(active);
+
+      // Act
+      const result = await sut.execute(employee.id.toString());
+
+      // Assert
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value.links).toHaveLength(1);
+        expect(result.value.links[0].link.documentTypeId).toBe("dt-1");
+        expect(result.value.links[0].status).toBe("PENDING");
+      }
+    });
+
+    it("excludes unlinked and includes status", async () => {
       // Arrange
       const { sut, employeeRepo, linkRepo } = makeSut();
       const employee = Employee.create({
@@ -45,7 +78,6 @@ describe("GetLinkedDocumentTypesUseCase", () => {
       expect(result.isRight()).toBe(true);
       if (result.isRight()) {
         expect(result.value.links).toHaveLength(1);
-        expect(result.value.links[0].documentTypeId).toBe("dt-1");
       }
     });
 

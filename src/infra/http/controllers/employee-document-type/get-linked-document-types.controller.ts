@@ -21,14 +21,14 @@ export class GetLinkedDocumentTypesController {
 
   @Get(":employeeId/document-types")
   @ApiOperation({
-    summary: "Lista tipos de documento vinculados ao colaborador"
+    summary: "Lista tipos vinculados + status (pendente/enviado)"
   })
   @ApiParam({
     name: "employeeId",
     example: "550e8400-e29b-41d4-a716-446655440000"
   })
   @ApiOkResponse({
-    description: "Lista de vínculos ativos",
+    description: "Lista de vínculos ativos com status",
     type: [EmployeeDocumentTypeResponseSwaggerDto]
   })
   @ApiNotFoundResponse({ description: "Colaborador não encontrado" })
@@ -41,7 +41,10 @@ export class GetLinkedDocumentTypesController {
     }
 
     return ApiResponse.ok(
-      result.value.links.map(EmployeeDocumentTypePresenter.toHTTP)
+      result.value.links.map(({ link, status }) => ({
+        ...EmployeeDocumentTypePresenter.toHTTP(link),
+        status
+      }))
     );
   }
 }
