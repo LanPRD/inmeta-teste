@@ -5,7 +5,7 @@ import {
 import { left, right, type Either } from "@/core/either";
 import { ConflictError, InternalError, ValidationError } from "@/core/errors";
 import { DocumentType } from "@/domain/entities";
-import type { DocumentTypeRepository } from "@/domain/repositories/document-type-repository";
+import { DocumentTypeRepository } from "@/domain/repositories/document-type-repository";
 import { Injectable, Logger } from "@nestjs/common";
 
 type CreateDocumentTypeUseCaseResponse = Either<

@@ -10,7 +10,7 @@ import {
   ValidationError
 } from "@/core/errors";
 import { DocumentType } from "@/domain/entities";
-import type { DocumentTypeRepository } from "@/domain/repositories/document-type-repository";
+import { DocumentTypeRepository } from "@/domain/repositories/document-type-repository";
 import { Injectable, Logger } from "@nestjs/common";
 
 type UpdateDocumentTypeUseCaseResponse = Either<
