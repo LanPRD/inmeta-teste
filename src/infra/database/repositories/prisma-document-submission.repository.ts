@@ -170,7 +170,9 @@ export class PrismaDocumentSubmissionRepository implements DocumentSubmissionRep
       this.prisma.documentSubmission.findMany({
         where: {
           status: SubmissionStatus.ACTIVE,
-          deletedAt: null
+          deletedAt: null,
+          employee: { deletedAt: null },
+          documentType: { deletedAt: null }
         },
         include: {
           employee: { select: { id: true, name: true } },

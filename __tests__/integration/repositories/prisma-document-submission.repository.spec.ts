@@ -530,6 +530,42 @@ describe("PrismaDocumentSubmissionRepository (integration)", () => {
       // Assert
       expect(stats.totalRequired).toBe(0);
     });
+
+    it("excludes recent submissions from deleted employees", async () => {
+      // Arrange
+      const empId = await createEmployee("DeletedRecent", "delrecent@test.com");
+      const dtId = await createDocumentType("ASO");
+      await createLink(empId, dtId);
+      await repo.create(makeSubmission(empId, dtId, 1));
+      await prisma.employee.update({
+        where: { id: empId },
+        data: { deletedAt: new Date() }
+      });
+
+      // Act
+      const stats = await repo.getStats();
+
+      // Assert
+      expect(stats.recentSubmissions).toHaveLength(0);
+    });
+
+    it("excludes recent submissions from deleted document types", async () => {
+      // Arrange
+      const empId = await createEmployee("DtRecent", "dtrecent@test.com");
+      const dtId = await createDocumentType("ASO");
+      await createLink(empId, dtId);
+      await repo.create(makeSubmission(empId, dtId, 1));
+      await prisma.documentType.update({
+        where: { id: dtId },
+        data: { deletedAt: new Date() }
+      });
+
+      // Act
+      const stats = await repo.getStats();
+
+      // Assert
+      expect(stats.recentSubmissions).toHaveLength(0);
+    });
   });
 
   describe("update", () => {

@@ -381,5 +381,24 @@ describe("Document Submission (e2e)", () => {
       expect(res.body.data.mostPendingDocumentTypes).toBeDefined();
       expect(res.body.data.recentSubmissions).toHaveLength(1);
     });
+
+    it("excludes recentSubmissions from a soft-deleted employee", async () => {
+      // Arrange
+      const empId = await createEmployee("StatsDel", "statsdel@e2e.test");
+      const dtId = await createDocumentType("ASO");
+      await linkDocumentType(empId, dtId);
+      await request(app.getHttpServer())
+        .post(`/employees/${empId}/documents`)
+        .send({ documentTypeId: dtId });
+
+      await request(app.getHttpServer()).delete(`/employees/${empId}`);
+
+      // Act
+      const res = await request(app.getHttpServer()).get("/stats/dashboard");
+
+      // Assert
+      expect(res.status).toBe(200);
+      expect(res.body.data.recentSubmissions).toEqual([]);
+    });
   });
 });
