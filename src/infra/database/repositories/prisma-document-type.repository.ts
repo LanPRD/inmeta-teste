@@ -1,9 +1,13 @@
+import { ConflictError } from "@/core/errors";
 import { DocumentType } from "@/domain/entities";
 import { DocumentTypeRepository } from "@/domain/repositories/document-type-repository";
 import type { FindAllParams } from "@/domain/repositories/employee-repository";
 import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaDocumentTypeMapper } from "../mappers";
 import { PrismaService } from "../prisma/prisma.service";
+
+const UNIQUE_CONSTRAINT_ERROR_CODE = "P2002";
 
 @Injectable()
 export class PrismaDocumentTypeRepository implements DocumentTypeRepository {
@@ -62,21 +66,43 @@ export class PrismaDocumentTypeRepository implements DocumentTypeRepository {
   }
 
   async create(documentType: DocumentType): Promise<DocumentType> {
-    const raw = await this.prisma.documentType.create({
-      data: PrismaDocumentTypeMapper.toPrisma(documentType)
-    });
+    try {
+      const raw = await this.prisma.documentType.create({
+        data: PrismaDocumentTypeMapper.toPrisma(documentType)
+      });
 
-    return PrismaDocumentTypeMapper.toDomain(raw);
+      return PrismaDocumentTypeMapper.toDomain(raw);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === UNIQUE_CONSTRAINT_ERROR_CODE
+      ) {
+        throw new ConflictError("Document type with this name already exists");
+      }
+
+      throw error;
+    }
   }
 
   async update(documentType: DocumentType): Promise<void> {
-    await this.prisma.documentType.update({
-      where: { id: documentType.id.toString() },
-      data: {
-        name: documentType.name,
-        description: documentType.description ?? null
+    try {
+      await this.prisma.documentType.update({
+        where: { id: documentType.id.toString() },
+        data: {
+          name: documentType.name,
+          description: documentType.description ?? null
+        }
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === UNIQUE_CONSTRAINT_ERROR_CODE
+      ) {
+        throw new ConflictError("Document type with this name already exists");
       }
-    });
+
+      throw error;
+    }
   }
 
   async delete(id: string): Promise<void> {
