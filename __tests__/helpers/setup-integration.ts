@@ -10,8 +10,12 @@ const databaseUrl =
 
 /**
  * Vitest globalSetup — garante que o Postgres de teste está de pé (idempotente,
- * não recria se já estiver rodando) e aplica o schema do Prisma. Roda uma vez
- * antes de todos os testes de integração.
+ * não recria se já estiver rodando) e aplica as migrations do Prisma. Roda uma
+ * vez antes de todos os testes de integração.
+ *
+ * Usa `migrate deploy` (não `db push`) porque parte do schema é aplicada via
+ * SQL bruto nas migrations (índices parciais/case-insensitive que o DSL do
+ * Prisma não expressa) — `db push` ignoraria esse SQL.
  */
 export function setup(): void {
   if (usingDefaultDatabase) {
@@ -21,7 +25,7 @@ export function setup(): void {
     });
   }
 
-  execSync("npx prisma db push", {
+  execSync("npx prisma migrate deploy", {
     env: { ...process.env, DATABASE_URL: databaseUrl },
     stdio: "pipe",
     windowsHide: true
