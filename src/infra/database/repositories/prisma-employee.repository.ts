@@ -24,6 +24,7 @@ export class PrismaEmployeeRepository implements EmployeeRepository {
     const [employees, total] = await Promise.all([
       this.prisma.employee.findMany({
         where,
+        orderBy: { createdAt: "asc" },
         skip: (params.page - 1) * params.limit,
         take: params.limit
       }),

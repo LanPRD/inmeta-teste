@@ -25,6 +25,7 @@ export class PrismaDocumentTypeRepository implements DocumentTypeRepository {
     const [documentTypes, total] = await Promise.all([
       this.prisma.documentType.findMany({
         where,
+        orderBy: { createdAt: "asc" },
         skip: (params.page - 1) * params.limit,
         take: params.limit
       }),

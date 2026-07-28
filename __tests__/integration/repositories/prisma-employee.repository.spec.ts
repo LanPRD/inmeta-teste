@@ -71,4 +71,33 @@ describe("PrismaEmployeeRepository (integration)", () => {
     const all = await repo.findAll({ page: 1, limit: 10 });
     expect(all.data.every(e => e.email !== "jane@integration.test")).toBe(true);
   });
+
+  it("returns distinct, non-overlapping items across pages in a stable order", async () => {
+    // Arrange
+    const created: string[] = [];
+    for (let i = 1; i <= 5; i++) {
+      const employee = await repo.create(
+        Employee.create({ name: `Ord ${i}`, email: `ord${i}@integration.test` })
+      );
+      created.push(employee.id.toString());
+    }
+
+    // Act
+    const page1 = await repo.findAll({ page: 1, limit: 2 });
+    const page2 = await repo.findAll({ page: 2, limit: 2 });
+    const page3 = await repo.findAll({ page: 3, limit: 2 });
+
+    // Assert
+    const ids = [...page1.data, ...page2.data, ...page3.data].map(e =>
+      e.id.toString()
+    );
+    expect(new Set(ids).size).toBe(5);
+    expect(ids.sort()).toEqual([...created].sort());
+
+    // Same query repeated returns the same order (stable, not random per-call)
+    const page1Again = await repo.findAll({ page: 1, limit: 2 });
+    expect(page1Again.data.map(e => e.id.toString())).toEqual(
+      page1.data.map(e => e.id.toString())
+    );
+  });
 });
