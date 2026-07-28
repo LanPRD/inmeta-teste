@@ -52,7 +52,7 @@ os colaboradores.
 | `includeDeleted` como query param opcional nas listagens                            | endpoint separado para listar deletados   | por padrão `GET /employees` só retorna ativos — alinhado com o SPEC. O param `?includeDeleted=true` inclui os soft-deletados sem precisar de rota extra. A lógica de filtro fica no repositório (Prisma: `WHERE deletedAt IS NULL` condicional), não no use-case.                                  |
 | Erros de domínio como `AppError` (core) + `ExceptionFilter` (infra)                 | `HttpException` do Nest direto no domínio | mantém `core`/`domain` sem dependência do NestJS; o filtro em `infra/http` traduz `AppError` pro formato HTTP                                                                                                                                                                                      |
 | `semantic-release` só com GitHub Releases (sem `@semantic-release/git`/`changelog`) | versionar `CHANGELOG.md` no repo          | o plugin de changelog commita de volta via bot — o desafio pede que só o autor commite                                                                                                                                                                                                             |
-| Validação no use-case com `safeParse` (defesa em profundidade)                      | confiar só no pipe HTTP                   | o use-case pode ser chamado fora do HTTP (testes, CLI, jobs). `parse()` lançaria exceção que o `try/catch` transformaria em 500; `safeParse` + retorno `left(ValidationError)` preserva o erro 422 corretamente. O custo de validar duas vezes (pipe + use-case) é desprezível frente à segurança. |
+| Validação no use-case com `safeParse` (defesa em profundidade)                      | confiar só no pipe HTTP                   | o use-case pode ser chamado fora do HTTP (testes, CLI, jobs). `parse()` lançaria exceção que o `try/catch` transformaria em 500; `safeParse` + retorno `left(ValidationError)` preserva o erro 400 corretamente. O custo de validar duas vezes (pipe + use-case) é desprezível frente à segurança. |
 | `InMemory*Repository` com `forceError` para testes                                  | mock manual com `vi.fn()`                 | mocks manuais são frágeis (tipagem apagada, setup por teste) e não testam interações reais. O repo em memória é reutilizável entre todos os testes, o `forceError` simula falhas sem hacks, e o `satisfies` do TS preserva os tipos narrow do Vitest.                                              |
 | Testes de schema Zod separados dos testes de use-case                               | testar validação dentro do use-case       | testar `safeParse` no use-case é testar o Zod, não sua regra de negócio. O schema tem seu próprio arquivo de teste validando o contrato (parse, trim, lowercase, rejeições). O use-case testa só os branches que envolvem decisão (conflito, erro interno, sucesso).                               |
 
@@ -73,17 +73,30 @@ conexão real com o banco).
 
 Cada camada de teste usa seu próprio banco de dados isolado:
 
-| Camada       | Banco           | Porta | Comando                     |
-| ------------ | --------------- | :---: | --------------------------- |
-| Unit         | InMemory (fake) |  —    | `npm test`                  |
-| Integração   | `inmeta_test`   | 5433  | `npm run test:integration`  |
-| E2E          | `inmeta` (dev)  | 5432  | `npm run test:e2e`          |
-| Cobertura    | unit apenas     |  —    | `npm run test:cov`          |
+| Camada     | Banco           | Porta | Comando                    |
+| ---------- | --------------- | :---: | -------------------------- |
+| Unit       | InMemory (fake) |   —   | `npm test`                 |
+| Integração | `inmeta_test`   | 5433  | `npm run test:integration` |
+| E2E        | `inmeta_test`   | 5433  | `npm run test:e2e`         |
+| Cobertura  | unit apenas     |   —   | `npm run test:cov`         |
 
-A separação de bancos garante que os testes de integração não interfiram nos
-dados de desenvolvimento, e que os diferentes arquivos de teste de integração
-não causem race conditions entre si (execução sequencial com
-`fileParallelism: false`).
+Integração e e2e compartilham o mesmo banco de teste (`inmeta_test`, porta 5433)
+— nunca o banco de desenvolvimento. Isso é importante porque ambos limpam todas
+as tabelas a cada teste (`cleanDatabase`); apontar para o banco de dev apagaria
+dados criados manualmente (ex: via Swagger). Os diferentes arquivos de teste de
+integração/e2e rodam sequencialmente entre si (`fileParallelism: false`) para
+não causar race conditions.
+
+`test:integration` e `test:e2e` sobem e derrubam o container Postgres de teste
+automaticamente (`globalSetup`/`globalTeardown` em `setup-integration.ts` e
+`setup-e2e.ts`, via `docker compose up -d --wait` / `down`) quando
+`DATABASE_URL` não vem definida no ambiente — não é preciso rodar
+`npm run db:test:up` manualmente, e o container não fica órfão depois. O
+container de **dev** (`npm run db:up`) é infraestrutura separada e nunca é
+tocado por esses scripts — fica de pé por conta do desenvolvedor, como qualquer
+serviço local de uso interativo (Swagger, testes manuais). Em CI, onde
+`DATABASE_URL` já vem setada pelo workflow, esse gerenciamento de Docker é
+pulado e o banco é o service container do próprio job.
 
 ```text
 __tests__/
@@ -96,12 +109,9 @@ __tests__/
 ```
 
 ```bash
-# Subir banco de teste de integração (primeira vez)
-npm run db:test:up
-
 npm test                   # unitários
-npm run test:integration   # integração
-npm run test:e2e           # e2e
+npm run test:integration   # integração (sobe/derruba o Postgres de teste sozinho)
+npm run test:e2e           # e2e (idem)
 npm run test:cov           # cobertura
 ```
 
