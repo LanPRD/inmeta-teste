@@ -5,6 +5,11 @@ export class InMemoryEmployeeDocumentTypeRepository extends EmployeeDocumentType
   private links: EmployeeDocumentType[] = [];
   forceError = false;
 
+  async findAllActive(): Promise<EmployeeDocumentType[]> {
+    if (this.forceError) throw new Error("Forced error");
+    return this.links.filter(l => !l.unlinkedAt);
+  }
+
   async findActiveByEmployee(
     employeeId: string
   ): Promise<EmployeeDocumentType[]> {

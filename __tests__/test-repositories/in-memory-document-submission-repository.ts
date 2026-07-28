@@ -67,6 +67,38 @@ export class InMemoryDocumentSubmissionRepository extends DocumentSubmissionRepo
     }
   }
 
+  async findPending(
+    page: number,
+    limit: number
+  ): Promise<{
+    data: Array<{
+      employeeId: string;
+      employeeName: string;
+      documentTypeId: string;
+      documentTypeName: string;
+      linkedAt: Date;
+    }>;
+    total: number;
+  }> {
+    if (this.forceError) throw new Error("Forced error");
+
+    const offset = (page - 1) * limit;
+
+    return {
+      data: this.pendingItems.slice(offset, offset + limit),
+      total: this.pendingItems.length
+    };
+  }
+
+  // Helper for tests — pre-populate pending items
+  pendingItems: Array<{
+    employeeId: string;
+    employeeName: string;
+    documentTypeId: string;
+    documentTypeName: string;
+    linkedAt: Date;
+  }> = [];
+
   async submit(
     previous: DocumentSubmission | null,
     next: DocumentSubmission
