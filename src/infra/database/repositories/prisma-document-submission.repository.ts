@@ -94,8 +94,19 @@ export class PrismaDocumentSubmissionRepository implements DocumentSubmissionRep
 
   async findPending(
     page: number,
-    limit: number
+    limit: number,
+    filters?: { employeeId?: string; documentTypeId?: string }
   ): Promise<{ data: FindPendingResult[]; total: number }> {
+    const linksWhere: Record<string, unknown> = { unlinkedAt: null };
+
+    if (filters?.employeeId) {
+      linksWhere.employeeId = filters.employeeId;
+    }
+
+    if (filters?.documentTypeId) {
+      linksWhere.documentTypeId = filters.documentTypeId;
+    }
+
     const [activeSubmissions, allLinks] = await Promise.all([
       this.prisma.documentSubmission.findMany({
         where: {
@@ -105,7 +116,7 @@ export class PrismaDocumentSubmissionRepository implements DocumentSubmissionRep
         select: { employeeId: true, documentTypeId: true }
       }),
       this.prisma.employeeDocumentType.findMany({
-        where: { unlinkedAt: null },
+        where: linksWhere,
         include: {
           employee: { select: { id: true, name: true, deletedAt: true } },
           documentType: { select: { id: true, name: true, deletedAt: true } }

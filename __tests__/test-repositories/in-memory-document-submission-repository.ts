@@ -73,7 +73,8 @@ export class InMemoryDocumentSubmissionRepository extends DocumentSubmissionRepo
 
   async findPending(
     page: number,
-    limit: number
+    limit: number,
+    filters?: { employeeId?: string; documentTypeId?: string }
   ): Promise<{
     data: Array<{
       employeeId: string;
@@ -86,11 +87,18 @@ export class InMemoryDocumentSubmissionRepository extends DocumentSubmissionRepo
   }> {
     if (this.forceError) throw new Error("Forced error");
 
+    const filtered = this.pendingItems.filter(
+      item =>
+        (!filters?.employeeId || item.employeeId === filters.employeeId) &&
+        (!filters?.documentTypeId ||
+          item.documentTypeId === filters.documentTypeId)
+    );
+
     const offset = (page - 1) * limit;
 
     return {
-      data: this.pendingItems.slice(offset, offset + limit),
-      total: this.pendingItems.length
+      data: filtered.slice(offset, offset + limit),
+      total: filtered.length
     };
   }
 

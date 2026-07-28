@@ -89,5 +89,77 @@ describe("GetPendingDocumentsUseCase", () => {
         expect(result.value).toBeInstanceOf(InternalError);
       }
     });
+
+    it("filters by employeeId", async () => {
+      // Arrange
+      const { sut, submissionRepo } = makeSut();
+      submissionRepo.pendingItems = [
+        {
+          employeeId: "emp-1",
+          employeeName: "John",
+          documentTypeId: "dt-1",
+          documentTypeName: "ASO",
+          linkedAt: new Date()
+        },
+        {
+          employeeId: "emp-2",
+          employeeName: "Jane",
+          documentTypeId: "dt-1",
+          documentTypeName: "ASO",
+          linkedAt: new Date()
+        }
+      ];
+
+      // Act
+      const result = await sut.execute({
+        page: 1,
+        limit: 10,
+        employeeId: "emp-1"
+      });
+
+      // Assert
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value.pending).toHaveLength(1);
+        expect(result.value.pending[0].employeeId).toBe("emp-1");
+        expect(result.value.meta.total).toBe(1);
+      }
+    });
+
+    it("filters by documentTypeId", async () => {
+      // Arrange
+      const { sut, submissionRepo } = makeSut();
+      submissionRepo.pendingItems = [
+        {
+          employeeId: "emp-1",
+          employeeName: "John",
+          documentTypeId: "dt-1",
+          documentTypeName: "ASO",
+          linkedAt: new Date()
+        },
+        {
+          employeeId: "emp-1",
+          employeeName: "John",
+          documentTypeId: "dt-2",
+          documentTypeName: "NR-7",
+          linkedAt: new Date()
+        }
+      ];
+
+      // Act
+      const result = await sut.execute({
+        page: 1,
+        limit: 10,
+        documentTypeId: "dt-2"
+      });
+
+      // Assert
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value.pending).toHaveLength(1);
+        expect(result.value.pending[0].documentTypeId).toBe("dt-2");
+        expect(result.value.meta.total).toBe(1);
+      }
+    });
   });
 });

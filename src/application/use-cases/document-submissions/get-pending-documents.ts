@@ -1,4 +1,7 @@
-import { PaginationSchema, type PaginationDto } from "@/application/dtos";
+import {
+  GetPendingDocumentsSchema,
+  type GetPendingDocumentsDto
+} from "@/application/dtos";
 import { left, right, type Either } from "@/core/either";
 import { InternalError, ValidationError } from "@/core/errors";
 import {
@@ -24,20 +27,21 @@ export class GetPendingDocumentsUseCase {
   ) {}
 
   async execute(
-    input: PaginationDto
+    input: GetPendingDocumentsDto
   ): Promise<GetPendingDocumentsUseCaseResponse> {
     try {
-      const parsed = PaginationSchema.safeParse(input);
+      const parsed = GetPendingDocumentsSchema.safeParse(input);
 
       if (!parsed.success) {
         return left(new ValidationError("Invalid query parameters"));
       }
 
-      const { page, limit } = parsed.data;
+      const { page, limit, employeeId, documentTypeId } = parsed.data;
 
       const { data, total } = await this.submissionRepository.findPending(
         page,
-        limit
+        limit,
+        { employeeId, documentTypeId }
       );
 
       return right({

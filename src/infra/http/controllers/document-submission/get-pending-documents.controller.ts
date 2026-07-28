@@ -1,4 +1,7 @@
-import { PaginationSchema, type PaginationDto } from "@/application/dtos";
+import {
+  GetPendingDocumentsSchema,
+  type GetPendingDocumentsDto
+} from "@/application/dtos";
 import { GetPendingDocumentsUseCase } from "@/application/use-cases/document-submissions";
 import { Controller, Get, Query } from "@nestjs/common";
 import {
@@ -23,13 +26,16 @@ export class GetPendingDocumentsController {
   @ApiOperation({ summary: "Lista pendências globais" })
   @ApiQuery({ name: "page", required: false, example: 1 })
   @ApiQuery({ name: "limit", required: false, example: 20 })
+  @ApiQuery({ name: "employeeId", required: false })
+  @ApiQuery({ name: "documentTypeId", required: false })
   @ApiOkResponse({
     description: "Lista de pendências",
     type: [PendingDocumentResponseSwaggerDto]
   })
   @ApiInternalServerErrorResponse({ description: "Erro interno" })
   async handle(
-    @Query(new ZodValidationPipe(PaginationSchema)) query: PaginationDto
+    @Query(new ZodValidationPipe(GetPendingDocumentsSchema))
+    query: GetPendingDocumentsDto
   ) {
     const result = await this.getPendingDocuments.execute(query);
 

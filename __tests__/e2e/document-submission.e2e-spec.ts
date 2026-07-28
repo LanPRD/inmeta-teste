@@ -271,6 +271,44 @@ describe("Document Submission (e2e)", () => {
       // Assert
       expect(res.body.data).toHaveLength(0);
     });
+
+    it("filters by employeeId", async () => {
+      // Arrange
+      const empA = await createEmployee("PendingA", "pendinga@e2e.test");
+      const empB = await createEmployee("PendingB", "pendingb@e2e.test");
+      const dtId = await createDocumentType("ASO");
+      await linkDocumentType(empA, dtId);
+      await linkDocumentType(empB, dtId);
+
+      // Act
+      const res = await request(app.getHttpServer())
+        .get("/documents/pending")
+        .query({ page: 1, limit: 10, employeeId: empA });
+
+      // Assert
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0].employeeId).toBe(empA);
+    });
+
+    it("filters by documentTypeId", async () => {
+      // Arrange
+      const empId = await createEmployee("PendingFilter", "pendingf@e2e.test");
+      const dt1 = await createDocumentType("ASO");
+      const dt2 = await createDocumentType("NR-7");
+      await linkDocumentType(empId, dt1);
+      await linkDocumentType(empId, dt2);
+
+      // Act
+      const res = await request(app.getHttpServer())
+        .get("/documents/pending")
+        .query({ page: 1, limit: 10, documentTypeId: dt2 });
+
+      // Assert
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0].documentTypeId).toBe(dt2);
+    });
   });
 
   describe("GET /stats/dashboard", () => {

@@ -409,6 +409,40 @@ describe("PrismaDocumentSubmissionRepository (integration)", () => {
       const page2 = await repo.findPending(2, 1);
       expect(page2.data).toHaveLength(1);
     });
+
+    it("filters by employeeId", async () => {
+      // Arrange
+      const emp1 = await createEmployee("Filter1", "filter1@test.com");
+      const emp2 = await createEmployee("Filter2", "filter2@test.com");
+      const dtId = await createDocumentType("ASO");
+      await createLink(emp1, dtId);
+      await createLink(emp2, dtId);
+
+      // Act
+      const result = await repo.findPending(1, 10, { employeeId: emp1 });
+
+      // Assert
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].employeeId).toBe(emp1);
+      expect(result.total).toBe(1);
+    });
+
+    it("filters by documentTypeId", async () => {
+      // Arrange
+      const empId = await createEmployee("FilterDt", "filterdt@test.com");
+      const dt1 = await createDocumentType("ASO");
+      const dt2 = await createDocumentType("NR-7");
+      await createLink(empId, dt1);
+      await createLink(empId, dt2);
+
+      // Act
+      const result = await repo.findPending(1, 10, { documentTypeId: dt2 });
+
+      // Assert
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].documentTypeId).toBe(dt2);
+      expect(result.total).toBe(1);
+    });
   });
 
   describe("getStats", () => {
