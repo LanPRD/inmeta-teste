@@ -11,7 +11,11 @@ export class PrismaEmployeeRepository implements EmployeeRepository {
   async findAll(
     params: FindAllParams
   ): Promise<{ data: Employee[]; total: number }> {
-    const where: Record<string, unknown> = { deletedAt: null };
+    const where: Record<string, unknown> = {};
+
+    if (!params.includeDeleted) {
+      where.deletedAt = null;
+    }
 
     if (params.name) {
       where.name = { contains: params.name, mode: "insensitive" };
