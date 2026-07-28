@@ -1,13 +1,20 @@
 import swc from "unplugin-swc";
 import { defineConfig } from "vitest/config";
 
+const databaseUrl =
+  process.env.DATABASE_URL ??
+  "postgresql://inmeta:inmeta@localhost:5432/inmeta?schema=public";
+
 export default defineConfig({
   test: {
     include: ["__tests__/**/*.e2e-spec.ts"],
     globals: true,
     root: "./",
+    fileParallelism: false,
+    globalSetup: ["__tests__/helpers/setup-e2e.ts"],
     env: {
-      NODE_ENV: "test"
+      NODE_ENV: "test",
+      DATABASE_URL: databaseUrl
     }
   },
   resolve: {
@@ -17,9 +24,7 @@ export default defineConfig({
     }
   },
   plugins: [
-    // This is required to build the test files with SWC
     swc.vite({
-      // Explicitly set the module type to avoid inheriting this value from a `.swcrc` config file
       module: { type: "es6" }
     })
   ]
