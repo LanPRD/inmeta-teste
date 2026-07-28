@@ -61,7 +61,10 @@ describe("PrismaEmployeeDocumentTypeRepository (integration)", () => {
       // Arrange
       const employeeId = await createEmployee("John", "john@test.com");
       const dtId = await createDocumentType("ASO");
-      const link = EmployeeDocumentType.create({ employeeId, documentTypeId: dtId });
+      const link = EmployeeDocumentType.create({
+        employeeId,
+        documentTypeId: dtId
+      });
 
       // Act
       const created = await repo.create(link);
@@ -120,12 +123,19 @@ describe("PrismaEmployeeDocumentTypeRepository (integration)", () => {
         EmployeeDocumentType.create({ employeeId: empId, documentTypeId: dtId })
       );
       const toUnlink = await repo.create(
-        EmployeeDocumentType.create({ employeeId: empId, documentTypeId: await createDocumentType("NR-7") })
+        EmployeeDocumentType.create({
+          employeeId: empId,
+          documentTypeId: await createDocumentType("NR-7")
+        })
       );
 
       // Act — unlink
       const unlinked = EmployeeDocumentType.create(
-        { employeeId: toUnlink.employeeId, documentTypeId: toUnlink.documentTypeId, unlinkedAt: new Date() },
+        {
+          employeeId: toUnlink.employeeId,
+          documentTypeId: toUnlink.documentTypeId,
+          unlinkedAt: new Date()
+        },
         toUnlink.id
       );
       await repo.update(unlinked);
