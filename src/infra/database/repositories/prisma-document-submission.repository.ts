@@ -1,5 +1,9 @@
 import { DocumentSubmission } from "@/domain/entities";
-import { DocumentSubmissionRepository } from "@/domain/repositories/document-submission-repository";
+import { SubmissionStatus } from "@/domain/enums";
+import {
+  DocumentSubmissionRepository,
+  type FindPendingResult
+} from "@/domain/repositories/document-submission-repository";
 import { Injectable } from "@nestjs/common";
 import { PrismaDocumentSubmissionMapper } from "../mappers/prisma-document-submission.mapper";
 import { PrismaService } from "../prisma/prisma.service";
@@ -14,7 +18,7 @@ export class PrismaDocumentSubmissionRepository implements DocumentSubmissionRep
   ): Promise<DocumentSubmission[]> {
     const where: Record<string, unknown> = {
       employeeId,
-      status: "ACTIVE",
+      status: SubmissionStatus.ACTIVE,
       deletedAt: null
     };
 
@@ -38,7 +42,7 @@ export class PrismaDocumentSubmissionRepository implements DocumentSubmissionRep
       where: {
         employeeId,
         documentTypeId,
-        status: "ACTIVE",
+        status: SubmissionStatus.ACTIVE,
         deletedAt: null
       }
     });
@@ -77,6 +81,54 @@ export class PrismaDocumentSubmissionRepository implements DocumentSubmissionRep
       where: { id: submission.id.toString() },
       data: { status: submission.status }
     });
+  }
+
+  async findPending(
+    page: number,
+    limit: number
+  ): Promise<{ data: FindPendingResult[]; total: number }> {
+    const [activeSubmissions, allLinks] = await Promise.all([
+      this.prisma.documentSubmission.findMany({
+        where: {
+          status: SubmissionStatus.ACTIVE,
+          deletedAt: null
+        },
+        select: { employeeId: true, documentTypeId: true }
+      }),
+      this.prisma.employeeDocumentType.findMany({
+        where: { unlinkedAt: null },
+        include: {
+          employee: { select: { id: true, name: true, deletedAt: true } },
+          documentType: { select: { id: true, name: true, deletedAt: true } }
+        },
+        orderBy: { linkedAt: "asc" }
+      })
+    ]);
+
+    const submittedKeys = new Set(
+      activeSubmissions.map(s => `${s.employeeId}:${s.documentTypeId}`)
+    );
+
+    const pending = allLinks
+      .filter(
+        l =>
+          !submittedKeys.has(`${l.employeeId}:${l.documentTypeId}`) &&
+          l.employee.deletedAt === null &&
+          l.documentType.deletedAt === null
+      )
+      .map(l => ({
+        employeeId: l.employeeId,
+        employeeName: l.employee.name,
+        documentTypeId: l.documentTypeId,
+        documentTypeName: l.documentType.name,
+        linkedAt: l.linkedAt
+      }));
+
+    const total = pending.length;
+    const offset = (page - 1) * limit;
+    const data = pending.slice(offset, offset + limit);
+
+    return { data, total };
   }
 
   async submit(

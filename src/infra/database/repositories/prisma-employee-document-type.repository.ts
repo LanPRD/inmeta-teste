@@ -8,6 +8,14 @@ import { PrismaService } from "../prisma/prisma.service";
 export class PrismaEmployeeDocumentTypeRepository implements EmployeeDocumentTypeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findAllActive(): Promise<EmployeeDocumentType[]> {
+    const links = await this.prisma.employeeDocumentType.findMany({
+      where: { unlinkedAt: null }
+    });
+
+    return links.map(PrismaEmployeeDocumentTypeMapper.toDomain);
+  }
+
   async findActiveByEmployee(
     employeeId: string
   ): Promise<EmployeeDocumentType[]> {
