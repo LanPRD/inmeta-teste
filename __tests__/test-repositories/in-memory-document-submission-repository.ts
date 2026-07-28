@@ -1,5 +1,8 @@
 import type { DocumentSubmission } from "@/domain/entities";
-import { DocumentSubmissionRepository } from "@/domain/repositories/document-submission-repository";
+import {
+  DocumentSubmissionRepository,
+  type GetStatsResult
+} from "@/domain/repositories/document-submission-repository";
 
 export class InMemoryDocumentSubmissionRepository extends DocumentSubmissionRepository {
   private submissions: DocumentSubmission[] = [];
@@ -90,7 +93,7 @@ export class InMemoryDocumentSubmissionRepository extends DocumentSubmissionRepo
     };
   }
 
-  // Helper for tests — pre-populate pending items
+  // Helpers for tests
   pendingItems: Array<{
     employeeId: string;
     employeeName: string;
@@ -98,6 +101,17 @@ export class InMemoryDocumentSubmissionRepository extends DocumentSubmissionRepo
     documentTypeName: string;
     linkedAt: Date;
   }> = [];
+  statsData: GetStatsResult = {
+    totalRequired: 0,
+    totalFulfilled: 0,
+    mostPending: [],
+    recentSubmissions: []
+  };
+
+  async getStats(): Promise<GetStatsResult> {
+    if (this.forceError) throw new Error("Forced error");
+    return this.statsData;
+  }
 
   async submit(
     previous: DocumentSubmission | null,

@@ -8,6 +8,28 @@ export interface FindPendingResult {
   linkedAt: Date;
 }
 
+export interface MostPendingResult {
+  documentTypeId: string;
+  documentTypeName: string;
+  pendingCount: number;
+}
+
+export interface RecentSubmissionResult {
+  employeeId: string;
+  employeeName: string;
+  documentTypeId: string;
+  documentTypeName: string;
+  version: number;
+  submittedAt: Date;
+}
+
+export interface GetStatsResult {
+  totalRequired: number;
+  totalFulfilled: number;
+  mostPending: MostPendingResult[];
+  recentSubmissions: RecentSubmissionResult[];
+}
+
 export abstract class DocumentSubmissionRepository {
   abstract findActiveByEmployee(
     employeeId: string,
@@ -27,6 +49,7 @@ export abstract class DocumentSubmissionRepository {
     page: number,
     limit: number
   ): Promise<{ data: FindPendingResult[]; total: number }>;
+  abstract getStats(): Promise<GetStatsResult>;
   abstract submit(
     previous: DocumentSubmission | null,
     next: DocumentSubmission

@@ -2,7 +2,10 @@ import { DocumentSubmission } from "@/domain/entities";
 import { SubmissionStatus } from "@/domain/enums";
 import {
   DocumentSubmissionRepository,
-  type FindPendingResult
+  type FindPendingResult,
+  type GetStatsResult,
+  type MostPendingResult,
+  type RecentSubmissionResult
 } from "@/domain/repositories/document-submission-repository";
 import { Injectable } from "@nestjs/common";
 import { PrismaDocumentSubmissionMapper } from "../mappers/prisma-document-submission.mapper";
@@ -131,22 +134,107 @@ export class PrismaDocumentSubmissionRepository implements DocumentSubmissionRep
     return { data, total };
   }
 
+  async getStats(): Promise<GetStatsResult> {
+    const [activeSubmissions, allLinks, recentSubmissions] = await Promise.all([
+      this.prisma.documentSubmission.findMany({
+        where: {
+          status: SubmissionStatus.ACTIVE,
+          deletedAt: null
+        },
+        select: { employeeId: true, documentTypeId: true }
+      }),
+      this.prisma.employeeDocumentType.findMany({
+        where: { unlinkedAt: null },
+        include: {
+          employee: { select: { deletedAt: true } },
+          documentType: { select: { id: true, name: true, deletedAt: true } }
+        }
+      }),
+      this.prisma.documentSubmission.findMany({
+        where: {
+          status: SubmissionStatus.ACTIVE,
+          deletedAt: null
+        },
+        include: {
+          employee: { select: { id: true, name: true } },
+          documentType: { select: { id: true, name: true } }
+        },
+        orderBy: { submittedAt: "desc" },
+        take: 10
+      })
+    ]);
+
+    const submittedKeys = new Set(
+      activeSubmissions.map(s => `${s.employeeId}:${s.documentTypeId}`)
+    );
+
+    const activeLinks = allLinks.filter(
+      l => l.employee.deletedAt === null && l.documentType.deletedAt === null
+    );
+
+    const totalRequired = activeLinks.length;
+    const totalFulfilled = activeLinks.filter(l =>
+      submittedKeys.has(`${l.employeeId}:${l.documentTypeId}`)
+    ).length;
+
+    const pendingByType = new Map<string, MostPendingResult>();
+
+    for (const link of activeLinks) {
+      if (!submittedKeys.has(`${link.employeeId}:${link.documentTypeId}`)) {
+        const existing = pendingByType.get(link.documentTypeId);
+
+        if (existing) {
+          existing.pendingCount++;
+        } else {
+          pendingByType.set(link.documentTypeId, {
+            documentTypeId: link.documentTypeId,
+            documentTypeName: link.documentType.name,
+            pendingCount: 1
+          });
+        }
+      }
+    }
+
+    const mostPending = Array.from(pendingByType.values())
+      .sort((a, b) => b.pendingCount - a.pendingCount)
+      .slice(0, 5);
+
+    const recent: RecentSubmissionResult[] = recentSubmissions.map(s => ({
+      employeeId: s.employeeId,
+      employeeName: s.employee.name,
+      documentTypeId: s.documentTypeId,
+      documentTypeName: s.documentType.name,
+      version: s.version,
+      submittedAt: s.submittedAt
+    }));
+
+    return {
+      totalRequired,
+      totalFulfilled,
+      mostPending,
+      recentSubmissions: recent
+    };
+  }
+
   async submit(
     previous: DocumentSubmission | null,
     next: DocumentSubmission
   ): Promise<DocumentSubmission> {
-    const created = await this.prisma.$transaction(async tx => {
-      if (previous) {
-        await tx.documentSubmission.update({
-          where: { id: previous.id.toString() },
-          data: { status: previous.status }
-        });
-      }
+    const created = await this.prisma.$transaction(
+      async tx => {
+        if (previous) {
+          await tx.documentSubmission.update({
+            where: { id: previous.id.toString() },
+            data: { status: previous.status }
+          });
+        }
 
-      return tx.documentSubmission.create({
-        data: PrismaDocumentSubmissionMapper.toPrisma(next)
-      });
-    });
+        return tx.documentSubmission.create({
+          data: PrismaDocumentSubmissionMapper.toPrisma(next)
+        });
+      },
+      { isolationLevel: "Serializable" }
+    );
 
     return PrismaDocumentSubmissionMapper.toDomain(created);
   }
