@@ -99,6 +99,34 @@ describe("GetSubmissionHistoryUseCase", () => {
       }
     });
 
+    it("returns history even when the employee is soft-deleted", async () => {
+      // Arrange
+      const { sut, employeeRepo, submissionRepo } = makeSut();
+      const employee = Employee.create({
+        name: "John",
+        email: "john@test.com"
+      });
+      await employeeRepo.create(employee);
+      await submissionRepo.create(
+        DocumentSubmission.create({
+          employeeId: employee.id.toString(),
+          documentTypeId: "dt-1",
+          version: 1,
+          status: SubmissionStatus.ACTIVE
+        })
+      );
+      await employeeRepo.delete(employee.id.toString());
+
+      // Act
+      const result = await sut.execute(employee.id.toString(), "dt-1");
+
+      // Assert
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value.submissions).toHaveLength(1);
+      }
+    });
+
     it("excludes soft-deleted versions by default and includes them when requested", async () => {
       // Arrange
       const { sut, employeeRepo, submissionRepo } = makeSut();

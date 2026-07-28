@@ -219,6 +219,27 @@ describe("Document Submission (e2e)", () => {
       expect(res.body.data[1].version).toBe(1);
     });
 
+    it("stays accessible after the employee is soft-deleted", async () => {
+      // Arrange
+      const empId = await createEmployee("HistDel", "histdel@e2e.test");
+      const dtId = await createDocumentType("ASO");
+      await linkDocumentType(empId, dtId);
+      await request(app.getHttpServer())
+        .post(`/employees/${empId}/documents`)
+        .send({ documentTypeId: dtId });
+
+      await request(app.getHttpServer()).delete(`/employees/${empId}`);
+
+      // Act
+      const res = await request(app.getHttpServer()).get(
+        `/employees/${empId}/documents/${dtId}/history`
+      );
+
+      // Assert
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
+    });
+
     it("returns empty array when no submissions exist", async () => {
       // Arrange
       const empId = await createEmployee("NoHist", "nohist@e2e.test");

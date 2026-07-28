@@ -31,7 +31,8 @@ export class GetSubmissionHistoryUseCase {
         );
       }
 
-      const employee = await this.employeeRepository.findById(employeeId);
+      const employee =
+        await this.employeeRepository.findByIdIncludingDeleted(employeeId);
 
       if (!employee) {
         return left(new NotFoundError("Employee", employeeId));
