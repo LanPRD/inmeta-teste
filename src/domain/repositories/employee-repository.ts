@@ -4,6 +4,7 @@ export interface FindAllParams {
   page: number;
   limit: number;
   name?: string;
+  includeDeleted?: boolean;
 }
 
 export abstract class EmployeeRepository {

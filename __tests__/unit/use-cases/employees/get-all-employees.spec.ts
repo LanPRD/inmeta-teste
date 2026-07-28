@@ -63,6 +63,36 @@ describe("GetAllEmployeesUseCase", () => {
       }
     });
 
+    it("includes deleted employees when includeDeleted is true", async () => {
+      // Arrange
+      const { sut, repo } = makeSut();
+      const active = Employee.create({
+        name: "Active",
+        email: "active@test.com"
+      });
+      const deleted = Employee.create({
+        name: "Deleted",
+        email: "deleted@test.com"
+      });
+      await repo.create(active);
+      await repo.create(deleted);
+      await repo.delete(deleted.id.toString());
+
+      // Act
+      const result = await sut.execute({
+        page: 1,
+        limit: 10,
+        includeDeleted: true
+      });
+
+      // Assert
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value.employees).toHaveLength(2);
+        expect(result.value.meta.total).toBe(2);
+      }
+    });
+
     it("returns ValidationError when query params are invalid", async () => {
       // Arrange
       const { sut } = makeSut();

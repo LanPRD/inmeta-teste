@@ -12,9 +12,11 @@ export class InMemoryDocumentTypeRepository extends DocumentTypeRepository {
   ): Promise<{ data: DocumentType[]; total: number }> {
     if (this.forceError) throw new Error("Forced error");
 
-    let filtered = this.documentTypes.filter(
-      d => !this.deletedIds.has(d.id.toString())
-    );
+    let filtered = this.documentTypes;
+
+    if (!params.includeDeleted) {
+      filtered = filtered.filter(d => !this.deletedIds.has(d.id.toString()));
+    }
 
     if (params.name) {
       const search = params.name.toLowerCase();

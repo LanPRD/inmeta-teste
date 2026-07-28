@@ -26,6 +26,7 @@ export class GetAllEmployeesController {
   @ApiQuery({ name: "page", required: false, example: 1 })
   @ApiQuery({ name: "limit", required: false, example: 20 })
   @ApiQuery({ name: "name", required: false, example: "John" })
+  @ApiQuery({ name: "includeDeleted", required: false, example: false })
   @ApiOkResponse({
     description: "Lista paginada",
     type: [EmployeeResponseSwaggerDto]

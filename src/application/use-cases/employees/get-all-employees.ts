@@ -32,12 +32,13 @@ export class GetAllEmployeesUseCase {
         return left(new ValidationError("Invalid query parameters"));
       }
 
-      const { page, limit, name } = parsed.data;
+      const { page, limit, name, includeDeleted } = parsed.data;
 
       const { data, total } = await this.employeeRepository.findAll({
         page,
         limit,
-        name
+        name,
+        includeDeleted
       });
 
       return right({

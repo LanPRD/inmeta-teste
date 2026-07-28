@@ -11,9 +11,11 @@ export class InMemoryEmployeeRepository extends EmployeeRepository {
   ): Promise<{ data: Employee[]; total: number }> {
     if (this.forceError) throw new Error("Forced error");
 
-    let filtered = this.employees.filter(
-      e => !this.deletedIds.has(e.id.toString())
-    );
+    let filtered = this.employees;
+
+    if (!params.includeDeleted) {
+      filtered = filtered.filter(e => !this.deletedIds.has(e.id.toString()));
+    }
 
     if (params.name) {
       const search = params.name.toLowerCase();
