@@ -42,7 +42,8 @@ export class InMemoryDocumentSubmissionRepository extends DocumentSubmissionRepo
 
   async findHistory(
     employeeId: string,
-    documentTypeId: string
+    documentTypeId: string,
+    includeDeleted = false
   ): Promise<DocumentSubmission[]> {
     if (this.forceError) throw new Error("Forced error");
 
@@ -51,7 +52,7 @@ export class InMemoryDocumentSubmissionRepository extends DocumentSubmissionRepo
         s =>
           s.employeeId === employeeId &&
           s.documentTypeId === documentTypeId &&
-          !s.deletedAt
+          (includeDeleted || !s.deletedAt)
       )
       .sort((a, b) => b.version - a.version);
   }

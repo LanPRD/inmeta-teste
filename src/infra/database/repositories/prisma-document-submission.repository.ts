@@ -57,14 +57,20 @@ export class PrismaDocumentSubmissionRepository implements DocumentSubmissionRep
 
   async findHistory(
     employeeId: string,
-    documentTypeId: string
+    documentTypeId: string,
+    includeDeleted = false
   ): Promise<DocumentSubmission[]> {
+    const where: Record<string, unknown> = {
+      employeeId,
+      documentTypeId
+    };
+
+    if (!includeDeleted) {
+      where.deletedAt = null;
+    }
+
     const submissions = await this.prisma.documentSubmission.findMany({
-      where: {
-        employeeId,
-        documentTypeId,
-        deletedAt: null
-      },
+      where,
       orderBy: { version: "desc" }
     });
 

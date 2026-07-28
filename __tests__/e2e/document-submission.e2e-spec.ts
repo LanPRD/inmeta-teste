@@ -206,6 +206,33 @@ describe("Document Submission (e2e)", () => {
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
     });
+
+    it("excludes soft-deleted versions by default and includes them with includeDeleted=true", async () => {
+      // Arrange
+      const empId = await createEmployee("HistDeleted", "histdeleted@e2e.test");
+      const dtId = await createDocumentType("ASO");
+      await linkDocumentType(empId, dtId);
+      const submitRes = await request(app.getHttpServer())
+        .post(`/employees/${empId}/documents`)
+        .send({ documentTypeId: dtId });
+
+      await prisma.documentSubmission.update({
+        where: { id: submitRes.body.data.id },
+        data: { deletedAt: new Date() }
+      });
+
+      // Act
+      const withoutDeleted = await request(app.getHttpServer()).get(
+        `/employees/${empId}/documents/${dtId}/history`
+      );
+      const withDeleted = await request(app.getHttpServer())
+        .get(`/employees/${empId}/documents/${dtId}/history`)
+        .query({ includeDeleted: "true" });
+
+      // Assert
+      expect(withoutDeleted.body.data).toEqual([]);
+      expect(withDeleted.body.data).toHaveLength(1);
+    });
   });
 
   describe("GET /documents/pending", () => {

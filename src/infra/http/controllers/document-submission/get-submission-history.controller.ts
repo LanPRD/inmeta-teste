@@ -1,11 +1,12 @@
 import { GetSubmissionHistoryUseCase } from "@/application/use-cases/document-submissions";
-import { Controller, Get, Param } from "@nestjs/common";
+import { Controller, Get, Param, Query } from "@nestjs/common";
 import {
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags
 } from "@nestjs/swagger";
 import { DocumentSubmissionResponseSwaggerDto } from "../../docs/document-submission-response.swagger.dto";
@@ -29,6 +30,11 @@ export class GetSubmissionHistoryController {
     name: "documentTypeId",
     example: "550e8400-e29b-41d4-a716-446655440000"
   })
+  @ApiQuery({
+    name: "includeDeleted",
+    required: false,
+    description: "Inclui versões soft-deletadas no histórico"
+  })
   @ApiOkResponse({
     description: "Histórico de versões",
     type: [DocumentSubmissionResponseSwaggerDto]
@@ -37,11 +43,13 @@ export class GetSubmissionHistoryController {
   @ApiInternalServerErrorResponse({ description: "Erro interno" })
   async handle(
     @Param("employeeId") employeeId: string,
-    @Param("documentTypeId") documentTypeId: string
+    @Param("documentTypeId") documentTypeId: string,
+    @Query("includeDeleted") includeDeleted?: string
   ) {
     const result = await this.getSubmissionHistory.execute(
       employeeId,
-      documentTypeId
+      documentTypeId,
+      includeDeleted === "true"
     );
 
     if (result.isLeft()) {

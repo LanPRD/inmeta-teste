@@ -41,7 +41,8 @@ export abstract class DocumentSubmissionRepository {
   ): Promise<DocumentSubmission | null>;
   abstract findHistory(
     employeeId: string,
-    documentTypeId: string
+    documentTypeId: string,
+    includeDeleted?: boolean
   ): Promise<DocumentSubmission[]>;
   abstract create(submission: DocumentSubmission): Promise<DocumentSubmission>;
   abstract update(submission: DocumentSubmission): Promise<void>;

@@ -212,6 +212,45 @@ describe("PrismaDocumentSubmissionRepository (integration)", () => {
       // Assert
       expect(history).toEqual([]);
     });
+
+    it("excludes soft-deleted submissions by default", async () => {
+      // Arrange
+      const empId = await createEmployee("Iris", "iris@test.com");
+      const dtId = await createDocumentType("ASO");
+      const created = await repo.create(
+        makeSubmission(empId, dtId, 1, SubmissionStatus.SUPERSEDED)
+      );
+      await prisma.documentSubmission.update({
+        where: { id: created.id.toString() },
+        data: { deletedAt: new Date() }
+      });
+
+      // Act
+      const history = await repo.findHistory(empId, dtId);
+
+      // Assert
+      expect(history).toEqual([]);
+    });
+
+    it("includes soft-deleted submissions when includeDeleted is true", async () => {
+      // Arrange
+      const empId = await createEmployee("Jonas", "jonas@test.com");
+      const dtId = await createDocumentType("ASO");
+      const created = await repo.create(
+        makeSubmission(empId, dtId, 1, SubmissionStatus.SUPERSEDED)
+      );
+      await prisma.documentSubmission.update({
+        where: { id: created.id.toString() },
+        data: { deletedAt: new Date() }
+      });
+
+      // Act
+      const history = await repo.findHistory(empId, dtId, true);
+
+      // Assert
+      expect(history).toHaveLength(1);
+      expect(history[0].version).toBe(1);
+    });
   });
 
   describe("submit", () => {

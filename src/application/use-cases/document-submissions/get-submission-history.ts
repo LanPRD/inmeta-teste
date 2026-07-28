@@ -21,7 +21,8 @@ export class GetSubmissionHistoryUseCase {
 
   async execute(
     employeeId: string,
-    documentTypeId: string
+    documentTypeId: string,
+    includeDeleted?: boolean
   ): Promise<GetSubmissionHistoryUseCaseResponse> {
     try {
       if (!employeeId || !documentTypeId) {
@@ -38,7 +39,8 @@ export class GetSubmissionHistoryUseCase {
 
       const submissions = await this.submissionRepository.findHistory(
         employeeId,
-        documentTypeId
+        documentTypeId,
+        includeDeleted
       );
 
       return right({ submissions });

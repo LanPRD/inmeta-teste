@@ -98,5 +98,41 @@ describe("GetSubmissionHistoryUseCase", () => {
         expect(result.value).toBeInstanceOf(InternalError);
       }
     });
+
+    it("excludes soft-deleted versions by default and includes them when requested", async () => {
+      // Arrange
+      const { sut, employeeRepo, submissionRepo } = makeSut();
+      const employee = Employee.create({
+        name: "John",
+        email: "john@test.com"
+      });
+      await employeeRepo.create(employee);
+
+      await submissionRepo.create(
+        DocumentSubmission.create({
+          employeeId: employee.id.toString(),
+          documentTypeId: "dt-1",
+          version: 1,
+          status: SubmissionStatus.SUPERSEDED,
+          deletedAt: new Date()
+        })
+      );
+
+      // Act
+      const withoutDeleted = await sut.execute(employee.id.toString(), "dt-1");
+      const withDeleted = await sut.execute(
+        employee.id.toString(),
+        "dt-1",
+        true
+      );
+
+      // Assert
+      expect(
+        withoutDeleted.isRight() && withoutDeleted.value.submissions
+      ).toEqual([]);
+      expect(
+        withDeleted.isRight() && withDeleted.value.submissions
+      ).toHaveLength(1);
+    });
   });
 });
