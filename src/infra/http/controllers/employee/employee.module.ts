@@ -9,10 +9,19 @@ import { EmployeeRepository } from "@/domain/repositories";
 import { PrismaEmployeeRepository } from "@/infra/database/repositories/prisma-employee.repository";
 import { Module } from "@nestjs/common";
 import { CreateEmployeeController } from "./create-employee.controller";
+import { DeleteEmployeeController } from "./delete-employee.controller";
+import { GetAllEmployeesController } from "./get-all-employees.controller";
 import { GetEmployeeByIdController } from "./get-employee-by-id.controller";
+import { UpdateEmployeeController } from "./update-employee.controller";
 
 @Module({
-  controllers: [CreateEmployeeController, GetEmployeeByIdController],
+  controllers: [
+    CreateEmployeeController,
+    GetAllEmployeesController,
+    GetEmployeeByIdController,
+    UpdateEmployeeController,
+    DeleteEmployeeController,
+  ],
   providers: [
     {
       provide: EmployeeRepository,
