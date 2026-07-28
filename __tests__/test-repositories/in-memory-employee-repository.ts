@@ -1,3 +1,4 @@
+import { ConflictError } from "@/core/errors";
 import type { Employee } from "@/domain/entities";
 import { EmployeeRepository, type FindAllParams } from "@/domain/repositories";
 
@@ -50,11 +51,34 @@ export class InMemoryEmployeeRepository extends EmployeeRepository {
   }
 
   async create(employee: Employee): Promise<Employee> {
+    if (this.forceError) throw new Error("Forced error");
+
+    const emailTaken = this.employees.some(
+      e => e.email === employee.email && !this.deletedIds.has(e.id.toString())
+    );
+
+    if (emailTaken) {
+      throw new ConflictError("Employee with this email already exists");
+    }
+
     this.employees.push(employee);
     return employee;
   }
 
   async update(employee: Employee): Promise<void> {
+    if (this.forceError) throw new Error("Forced error");
+
+    const emailTaken = this.employees.some(
+      e =>
+        e.id.toString() !== employee.id.toString() &&
+        e.email === employee.email &&
+        !this.deletedIds.has(e.id.toString())
+    );
+
+    if (emailTaken) {
+      throw new ConflictError("Employee with this email already exists");
+    }
+
     const index = this.employees.findIndex(
       e => e.id.toString() === employee.id.toString()
     );

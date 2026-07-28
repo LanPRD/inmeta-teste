@@ -1,3 +1,4 @@
+import { ConflictError } from "@/core/errors";
 import type { DocumentType } from "@/domain/entities";
 import type { FindAllParams } from "@/domain/repositories";
 import { DocumentTypeRepository } from "@/domain/repositories/document-type-repository";
@@ -51,11 +52,36 @@ export class InMemoryDocumentTypeRepository extends DocumentTypeRepository {
   }
 
   async create(documentType: DocumentType): Promise<DocumentType> {
+    if (this.forceError) throw new Error("Forced error");
+
+    const nameTaken = this.documentTypes.some(
+      d =>
+        d.name.toLowerCase() === documentType.name.toLowerCase() &&
+        !this.deletedIds.has(d.id.toString())
+    );
+
+    if (nameTaken) {
+      throw new ConflictError("Document type with this name already exists");
+    }
+
     this.documentTypes.push(documentType);
     return documentType;
   }
 
   async update(documentType: DocumentType): Promise<void> {
+    if (this.forceError) throw new Error("Forced error");
+
+    const nameTaken = this.documentTypes.some(
+      d =>
+        d.id.toString() !== documentType.id.toString() &&
+        d.name.toLowerCase() === documentType.name.toLowerCase() &&
+        !this.deletedIds.has(d.id.toString())
+    );
+
+    if (nameTaken) {
+      throw new ConflictError("Document type with this name already exists");
+    }
+
     const index = this.documentTypes.findIndex(
       d => d.id.toString() === documentType.id.toString()
     );
