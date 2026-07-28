@@ -72,6 +72,33 @@ describe("PrismaEmployeeRepository (integration)", () => {
     expect(all.data.every(e => e.email !== "jane@integration.test")).toBe(true);
   });
 
+  it("findByIdIncludingDeleted finds a soft-deleted employee", async () => {
+    // Arrange
+    const employee = Employee.create({
+      name: "Deleted",
+      email: "deleted@integration.test"
+    });
+    await repo.create(employee);
+    await repo.delete(employee.id.toString());
+
+    // Act
+    const found = await repo.findByIdIncludingDeleted(employee.id.toString());
+
+    // Assert
+    expect(found).not.toBeNull();
+    expect(found?.email).toBe("deleted@integration.test");
+  });
+
+  it("findByIdIncludingDeleted returns null for a non-existent ID", async () => {
+    // Act
+    const found = await repo.findByIdIncludingDeleted(
+      "00000000-0000-0000-0000-000000000000"
+    );
+
+    // Assert
+    expect(found).toBeNull();
+  });
+
   it("returns distinct, non-overlapping items across pages in a stable order", async () => {
     // Arrange
     const created: string[] = [];

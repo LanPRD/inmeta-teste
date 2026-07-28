@@ -40,6 +40,12 @@ export class InMemoryEmployeeRepository extends EmployeeRepository {
     );
   }
 
+  async findByIdIncludingDeleted(id: string): Promise<Employee | null> {
+    if (this.forceError) throw new Error("Forced error");
+
+    return this.employees.find(e => e.id.toString() === id) ?? null;
+  }
+
   async findByEmail(email: string): Promise<Employee | null> {
     if (this.forceError) throw new Error("Forced error");
 

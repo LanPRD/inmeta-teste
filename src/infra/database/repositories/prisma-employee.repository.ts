@@ -51,6 +51,16 @@ export class PrismaEmployeeRepository implements EmployeeRepository {
     return PrismaEmployeeMapper.toDomain(employee);
   }
 
+  async findByIdIncludingDeleted(id: string): Promise<Employee | null> {
+    const employee = await this.prisma.employee.findUnique({
+      where: { id }
+    });
+
+    if (!employee) return null;
+
+    return PrismaEmployeeMapper.toDomain(employee);
+  }
+
   async findByEmail(email: string): Promise<Employee | null> {
     const employee = await this.prisma.employee.findFirst({
       where: { email, deletedAt: null }
