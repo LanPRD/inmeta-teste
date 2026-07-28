@@ -1,5 +1,5 @@
 import { Employee } from "@/domain/entities";
-import { EmployeeRepository } from "@/domain/repositories";
+import { EmployeeRepository, type FindAllParams } from "@/domain/repositories";
 import { Injectable } from "@nestjs/common";
 import { PrismaEmployeeMapper } from "../mappers";
 import { PrismaService } from "../prisma/prisma.service";
@@ -8,12 +8,28 @@ import { PrismaService } from "../prisma/prisma.service";
 export class PrismaEmployeeRepository implements EmployeeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(): Promise<Employee[]> {
-    const employees = await this.prisma.employee.findMany({
-      where: { deletedAt: null }
-    });
+  async findAll(
+    params: FindAllParams
+  ): Promise<{ data: Employee[]; total: number }> {
+    const where: Record<string, unknown> = { deletedAt: null };
 
-    return employees.map(e => PrismaEmployeeMapper.toDomain(e));
+    if (params.name) {
+      where.name = { contains: params.name, mode: "insensitive" };
+    }
+
+    const [employees, total] = await Promise.all([
+      this.prisma.employee.findMany({
+        where,
+        skip: (params.page - 1) * params.limit,
+        take: params.limit
+      }),
+      this.prisma.employee.count({ where })
+    ]);
+
+    return {
+      data: employees.map(PrismaEmployeeMapper.toDomain),
+      total
+    };
   }
 
   async findById(id: string): Promise<Employee | null> {

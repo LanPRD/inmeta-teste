@@ -34,22 +34,14 @@ export class GetAllEmployeesUseCase {
 
       const { page, limit, name } = parsed.data;
 
-      let employees = await this.employeeRepository.findAll();
-
-      if (name) {
-        const search = name.toLowerCase();
-
-        employees = employees.filter(e =>
-          e.name.toLowerCase().includes(search)
-        );
-      }
-
-      const total = employees.length;
-      const offset = (page - 1) * limit;
-      const paged = employees.slice(offset, offset + limit);
+      const { data, total } = await this.employeeRepository.findAll({
+        page,
+        limit,
+        name
+      });
 
       return right({
-        employees: paged,
+        employees: data,
         meta: { page, limit, total }
       });
     } catch (error) {

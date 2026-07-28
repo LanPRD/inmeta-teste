@@ -1,8 +1,7 @@
 import { z } from "zod";
+import { PaginationSchema } from "./pagination.dto";
 
-export const GetAllEmployeesSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+export const GetAllEmployeesSchema = PaginationSchema.extend({
   name: z.string().trim().optional()
 });
 
