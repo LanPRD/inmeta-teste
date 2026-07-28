@@ -9,9 +9,7 @@ export class InMemoryEmployeeDocumentTypeRepository extends EmployeeDocumentType
     employeeId: string
   ): Promise<EmployeeDocumentType[]> {
     if (this.forceError) throw new Error("Forced error");
-    return this.links.filter(
-      l => l.employeeId === employeeId && !l.unlinkedAt
-    );
+    return this.links.filter(l => l.employeeId === employeeId && !l.unlinkedAt);
   }
 
   async findByEmployeeAndDocumentType(
@@ -21,9 +19,7 @@ export class InMemoryEmployeeDocumentTypeRepository extends EmployeeDocumentType
     if (this.forceError) throw new Error("Forced error");
     return (
       this.links.find(
-        l =>
-          l.employeeId === employeeId &&
-          l.documentTypeId === documentTypeId
+        l => l.employeeId === employeeId && l.documentTypeId === documentTypeId
       ) ?? null
     );
   }
