@@ -1,3 +1,4 @@
+import { ConflictError } from "@/core/errors";
 import { EmployeeDocumentType } from "@/domain/entities";
 import { EmployeeDocumentTypeRepository } from "@/domain/repositories/employee-document-type-repository";
 import { PrismaModule } from "@/infra/database/prisma/prisma.module";
@@ -56,8 +57,8 @@ describe("PrismaEmployeeDocumentTypeRepository (integration)", () => {
 
   // ---- tests ----
 
-  describe("create + findAllActive", () => {
-    it("creates a link and returns it in findAllActive", async () => {
+  describe("create", () => {
+    it("creates a link and returns it as active for the employee", async () => {
       // Arrange
       const employeeId = await createEmployee("John", "john@test.com");
       const dtId = await createDocumentType("ASO");
@@ -68,12 +69,73 @@ describe("PrismaEmployeeDocumentTypeRepository (integration)", () => {
 
       // Act
       const created = await repo.create(link);
-      const allActive = await repo.findAllActive();
+      const active = await repo.findActiveByEmployee(employeeId);
 
       // Assert
       expect(created.employeeId).toBe(employeeId);
       expect(created.documentTypeId).toBe(dtId);
-      expect(allActive).toHaveLength(1);
+      expect(active).toHaveLength(1);
+    });
+  });
+
+  describe("createActiveLink", () => {
+    it("creates the link when no active link exists for the pair", async () => {
+      // Arrange
+      const employeeId = await createEmployee("Ivy", "ivy@test.com");
+      const dtId = await createDocumentType("ASO");
+      const link = EmployeeDocumentType.create({
+        employeeId,
+        documentTypeId: dtId
+      });
+
+      // Act
+      const created = await repo.createActiveLink(link);
+
+      // Assert
+      expect(created.employeeId).toBe(employeeId);
+      expect(created.documentTypeId).toBe(dtId);
+      expect(created.unlinkedAt).toBeNull();
+    });
+
+    it("throws ConflictError when an active link already exists for the pair", async () => {
+      // Arrange
+      const employeeId = await createEmployee("Jack", "jack@test.com");
+      const dtId = await createDocumentType("ASO");
+      await repo.createActiveLink(
+        EmployeeDocumentType.create({ employeeId, documentTypeId: dtId })
+      );
+
+      // Act & Assert
+      await expect(
+        repo.createActiveLink(
+          EmployeeDocumentType.create({ employeeId, documentTypeId: dtId })
+        )
+      ).rejects.toThrow(ConflictError);
+    });
+
+    it("allows relinking after the previous link was unlinked", async () => {
+      // Arrange
+      const employeeId = await createEmployee("Karen", "karen@test.com");
+      const dtId = await createDocumentType("ASO");
+      const firstLink = await repo.createActiveLink(
+        EmployeeDocumentType.create({ employeeId, documentTypeId: dtId })
+      );
+      await repo.update(
+        EmployeeDocumentType.create(
+          { employeeId, documentTypeId: dtId, unlinkedAt: new Date() },
+          firstLink.id
+        )
+      );
+
+      // Act
+      const relinked = await repo.createActiveLink(
+        EmployeeDocumentType.create({ employeeId, documentTypeId: dtId })
+      );
+
+      // Assert
+      expect(relinked.unlinkedAt).toBeNull();
+      const active = await repo.findActiveByEmployee(employeeId);
+      expect(active).toHaveLength(1);
     });
   });
 
@@ -179,7 +241,7 @@ describe("PrismaEmployeeDocumentTypeRepository (integration)", () => {
   });
 
   describe("update", () => {
-    it("sets unlinkedAt and the link disappears from findAllActive", async () => {
+    it("sets unlinkedAt and the link disappears from findActiveByEmployee", async () => {
       // Arrange
       const empId = await createEmployee("Eve", "eve@test.com");
       const dtId = await createDocumentType("ASO");
@@ -195,8 +257,8 @@ describe("PrismaEmployeeDocumentTypeRepository (integration)", () => {
       await repo.update(updated);
 
       // Assert
-      const allActive = await repo.findAllActive();
-      expect(allActive).toHaveLength(0);
+      const active = await repo.findActiveByEmployee(empId);
+      expect(active).toHaveLength(0);
     });
   });
 });

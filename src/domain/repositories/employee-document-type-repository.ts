@@ -1,7 +1,6 @@
 import type { EmployeeDocumentType } from "../entities";
 
 export abstract class EmployeeDocumentTypeRepository {
-  abstract findAllActive(): Promise<EmployeeDocumentType[]>;
   abstract findActiveByEmployee(
     employeeId: string
   ): Promise<EmployeeDocumentType[]>;
@@ -10,5 +9,9 @@ export abstract class EmployeeDocumentTypeRepository {
     documentTypeId: string
   ): Promise<EmployeeDocumentType | null>;
   abstract create(link: EmployeeDocumentType): Promise<EmployeeDocumentType>;
+  // Atomically checks for an existing active link and creates the new one; throws ConflictError otherwise.
+  abstract createActiveLink(
+    link: EmployeeDocumentType
+  ): Promise<EmployeeDocumentType>;
   abstract update(link: EmployeeDocumentType): Promise<void>;
 }

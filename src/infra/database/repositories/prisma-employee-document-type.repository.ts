@@ -1,20 +1,16 @@
+import { ConflictError } from "@/core/errors";
 import { EmployeeDocumentType } from "@/domain/entities";
 import { EmployeeDocumentTypeRepository } from "@/domain/repositories/employee-document-type-repository";
 import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaEmployeeDocumentTypeMapper } from "../mappers/prisma-employee-document-type.mapper";
 import { PrismaService } from "../prisma/prisma.service";
+
+const SERIALIZATION_FAILURE_ERROR_CODE = "P2034";
 
 @Injectable()
 export class PrismaEmployeeDocumentTypeRepository implements EmployeeDocumentTypeRepository {
   constructor(private readonly prisma: PrismaService) {}
-
-  async findAllActive(): Promise<EmployeeDocumentType[]> {
-    const links = await this.prisma.employeeDocumentType.findMany({
-      where: { unlinkedAt: null }
-    });
-
-    return links.map(PrismaEmployeeDocumentTypeMapper.toDomain);
-  }
 
   async findActiveByEmployee(
     employeeId: string
@@ -31,7 +27,8 @@ export class PrismaEmployeeDocumentTypeRepository implements EmployeeDocumentTyp
     documentTypeId: string
   ): Promise<EmployeeDocumentType | null> {
     const link = await this.prisma.employeeDocumentType.findFirst({
-      where: { employeeId, documentTypeId }
+      where: { employeeId, documentTypeId },
+      orderBy: { linkedAt: "desc" }
     });
 
     if (!link) return null;
@@ -45,6 +42,52 @@ export class PrismaEmployeeDocumentTypeRepository implements EmployeeDocumentTyp
     });
 
     return PrismaEmployeeDocumentTypeMapper.toDomain(raw);
+  }
+
+  async createActiveLink(
+    link: EmployeeDocumentType
+  ): Promise<EmployeeDocumentType> {
+    try {
+      const raw = await this.prisma.$transaction(
+        async tx => {
+          const existing = await tx.employeeDocumentType.findFirst({
+            where: {
+              employeeId: link.employeeId,
+              documentTypeId: link.documentTypeId,
+              unlinkedAt: null
+            }
+          });
+
+          if (existing) {
+            throw new ConflictError(
+              "This document type is already linked to the employee"
+            );
+          }
+
+          return tx.employeeDocumentType.create({
+            data: PrismaEmployeeDocumentTypeMapper.toPrisma(link)
+          });
+        },
+        { isolationLevel: "Serializable" }
+      );
+
+      return PrismaEmployeeDocumentTypeMapper.toDomain(raw);
+    } catch (error) {
+      if (error instanceof ConflictError) {
+        throw error;
+      }
+
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === SERIALIZATION_FAILURE_ERROR_CODE
+      ) {
+        throw new ConflictError(
+          "This document type is already linked to the employee"
+        );
+      }
+
+      throw error;
+    }
   }
 
   async update(link: EmployeeDocumentType): Promise<void> {

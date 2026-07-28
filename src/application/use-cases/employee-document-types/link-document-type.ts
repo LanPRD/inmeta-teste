@@ -39,29 +39,19 @@ export class LinkDocumentTypeUseCase {
         return left(new NotFoundError("DocumentType", documentTypeId));
       }
 
-      const existingLink =
-        await this.linkRepository.findByEmployeeAndDocumentType(
-          employeeId,
-          documentTypeId
-        );
-
-      if (existingLink && !existingLink.unlinkedAt) {
-        return left(
-          new ConflictError(
-            "This document type is already linked to the employee"
-          )
-        );
-      }
-
       const link = EmployeeDocumentType.create({
         employeeId,
         documentTypeId
       });
 
-      const created = await this.linkRepository.create(link);
+      const created = await this.linkRepository.createActiveLink(link);
 
       return right({ link: created });
     } catch (error) {
+      if (error instanceof ConflictError) {
+        return left(error);
+      }
+
       this.logger.error("Failed to link document type", error);
       return left(new InternalError("Failed to link document type"));
     }
