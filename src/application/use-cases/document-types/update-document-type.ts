@@ -44,18 +44,6 @@ export class UpdateDocumentTypeUseCase {
         return left(new NotFoundError("DocumentType", documentTypeId));
       }
 
-      if (parsed.data.name && parsed.data.name !== existing.name) {
-        const nameTaken = await this.documentTypeRepository.findByName(
-          parsed.data.name
-        );
-
-        if (nameTaken && nameTaken.id.toString() !== documentTypeId) {
-          return left(
-            new ConflictError("Document type with this name already exists")
-          );
-        }
-      }
-
       const updated = DocumentType.create(
         {
           name: parsed.data.name ?? existing.name,
@@ -72,6 +60,10 @@ export class UpdateDocumentTypeUseCase {
 
       return right({ documentType: updated });
     } catch (error) {
+      if (error instanceof ConflictError) {
+        return left(error);
+      }
+
       this.logger.error("Failed to update document type", error);
       return left(new InternalError("Failed to update document type"));
     }

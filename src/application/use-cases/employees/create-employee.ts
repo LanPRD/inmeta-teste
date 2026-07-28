@@ -31,20 +31,15 @@ export class CreateEmployeeUseCase {
 
       const { name, email } = parsed.data;
 
-      const employeeAlreadyExists =
-        await this.employeeRepository.findByEmail(email);
-
-      if (employeeAlreadyExists) {
-        return left(
-          new ConflictError("Employee with this email already exists")
-        );
-      }
-
       const employee = Employee.create({ name, email });
       const response = await this.employeeRepository.create(employee);
 
       return right({ employee: response });
     } catch (error) {
+      if (error instanceof ConflictError) {
+        return left(error);
+      }
+
       this.logger.error("Error creating employee", error);
       return left(new InternalError("Error creating employee"));
     }

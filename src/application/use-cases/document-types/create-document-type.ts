@@ -33,19 +33,15 @@ export class CreateDocumentTypeUseCase {
 
       const { name, description } = parsed.data;
 
-      const alreadyExists = await this.documentTypeRepository.findByName(name);
-
-      if (alreadyExists) {
-        return left(
-          new ConflictError("Document type with this name already exists")
-        );
-      }
-
       const documentType = DocumentType.create({ name, description });
       const created = await this.documentTypeRepository.create(documentType);
 
       return right({ documentType: created });
     } catch (error) {
+      if (error instanceof ConflictError) {
+        return left(error);
+      }
+
       this.logger.error("Error creating document type", error);
       return left(new InternalError("Error creating document type"));
     }

@@ -41,18 +41,6 @@ export class UpdateEmployeeUseCase {
         return left(new NotFoundError("Employee", employeeId));
       }
 
-      if (parsed.data.email && parsed.data.email !== existing.email) {
-        const emailTaken = await this.employeeRepository.findByEmail(
-          parsed.data.email
-        );
-
-        if (emailTaken && emailTaken.id.toString() !== employeeId) {
-          return left(
-            new ConflictError("Employee with this email already exists")
-          );
-        }
-      }
-
       const updated = Employee.create(
         {
           name: parsed.data.name ?? existing.name,
@@ -66,6 +54,10 @@ export class UpdateEmployeeUseCase {
 
       return right({ employee: updated });
     } catch (error) {
+      if (error instanceof ConflictError) {
+        return left(error);
+      }
+
       this.logger.error("Failed to update employee", error);
       return left(new InternalError("Failed to update employee"));
     }
